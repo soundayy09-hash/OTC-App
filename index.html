@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playerok OTC</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+  background: #FFFFFF; 
+  color: #1C1C1E;
+  padding-bottom: 110px; 
+}
+.page { display: none; }
+.page.active { display: block; }
+.container { padding: 16px; }
+
+/* DEALS */
+.deals-container { padding: 20px; }
+.deals-container h1 { font-size: 24px; font-weight: 700; margin-bottom: 18px; color: #1C1C1E; }
+.btn { width: 100%; padding: 15px; margin-bottom: 10px; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; }
+
+.btn-blue { 
+  background: #007AFF; 
+  color: white; 
+  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.25); 
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+.btn-blue:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2);
+}
+
+.btn-white { background: #F2F2F7; border: 1px solid #E5E5EA; color: #1C1C1E; }
+
+.btn-shimmer {
+  background: linear-gradient(90deg, #F2F2F7 0%, #E5E5EA 25%, #007AFF 50%, #E5E5EA 75%, #F2F2F7 100%);
+  background-size: 200% 100%;
+  color: #0056B3;
+  border: 1px solid rgba(0, 122, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.1);
+  animation: buttonShimmer 3s linear infinite;
+  transition: transform 0.1s ease;
+}
+.btn-shimmer:active { transform: scale(0.98); }
+@keyframes buttonShimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* PROFILE */
+#page-profile { position: relative; }
+.profile-header { text-align: center; padding: 20px 0 14px; }
+.avatar { width: 82px; height: 82px; border-radius: 50%; overflow: hidden; margin: 0 auto 10px; background: #007AFF; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: 700; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-name { font-size: 19px; font-weight: 700; margin-bottom: 3px; color: #1C1C1E; }
+.profile-username { font-size: 14px; color: #8E8E93; }
+
+.theme-toggle { position: absolute; top: 16px; right: 16px; background: #F2F2F7; border: 1px solid #E5E5EA; border-radius: 20px; display: flex; padding: 4px; gap: 2px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+.theme-btn { width: 30px; height: 30px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: background .2s; }
+.theme-btn.active { background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+.balance-card { background: #F2F2F7; margin-bottom: 12px; padding: 16px 18px; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E5EA; }
+.balance-label { font-size: 17px; font-weight: 700; color: #1C1C1E; }
+.balance-right { display: flex; align-items: center; gap: 10px; }
+.hide-zero-label { font-size: 14px; color: #8E8E93; }
+
+.switch { position: relative; width: 51px; height: 31px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.slider { position: absolute; inset: 0; background: #E5E5EA; border-radius: 34px; transition: .3s; }
+.slider:before { content: ""; position: absolute; width: 27px; height: 27px; left: 2px; bottom: 2px; background: white; border-radius: 50%; transition: .3s; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+input:checked + .slider { background: #34C759; }
+input:checked + .slider:before { transform: translateX(20px); }
+
+.wallets-wrap { background: #FFFFFF; border-radius: 18px; padding: 8px 14px; margin-bottom: 12px; border: 1px solid #E5E5EA; }
+.wallet-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid #F2F2F7; }
+.wallet-item:last-child { border-bottom: none; }
+.wallet-left { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 500; color: #1C1C1E; }
+.wallet-left img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.wallet-balance { font-weight: 700; font-size: 15px; color: #007AFF; }
+.wallet-item.hide { display: none; }
+
+.stats-card { background: #FFFFFF; border-radius: 18px; padding: 18px; margin-bottom: 12px; border: 1px solid #E5E5EA; }
+.stats-title { font-size: 17px; font-weight: 700; margin-bottom: 12px; color: #1C1C1E; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.stat-card { background: #F2F2F7; padding: 12px; border-radius: 14px; text-align: center; }
+.stat-card.full { grid-column: span 2; }
+.stat-card-label { font-size: 12px; color: #8E8E93; margin-bottom: 5px; }
+.stat-card-val { font-size: 20px; font-weight: 700; color: #1C1C1E; }
+
+.turnover-card { border-radius: 14px; padding: 14px 12px; text-align: center; margin-top: 8px; overflow: hidden; background: linear-gradient(90deg, #F2F2F7 0%, #E5E5EA 50%, #F2F2F7 100%); background-size: 200% 100%; animation: shimmer 2.4s ease-in-out infinite; border: 1px solid #E5E5EA; }
+@keyframes shimmer { 0% { background-position: 200% center; } 100% { background-position: -200% center; } }
+.turnover-label { font-size: 13px; color: #8E8E93; margin-bottom: 5px; }
+.turnover-val { font-size: 22px; font-weight: 700; color: #007AFF; }
+
+.menu-item { background: #FFFFFF; border-radius: 18px; padding: 16px 18px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 500; cursor: pointer; border: 1px solid #E5E5EA; }
+.menu-item img { width: 26px; height: 26px; object-fit: contain; filter: brightness(0.2); }
+.menu-item-arrow { margin-left: auto; color: #C7C7CC; font-size: 20px; }
+
+.rates-card { background: #FFFFFF; border-radius: 18px; padding: 18px; margin-bottom: 12px; border: 1px solid #E5E5EA; }
+.rates-title { font-size: 17px; font-weight: 700; margin-bottom: 12px; color: #1C1C1E; }
+.rate-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #F2F2F7; }
+.rate-left { display: flex; align-items: center; gap: 10px; }
+.rate-left img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.rate-pair { font-size: 15px; font-weight: 500; color: #1C1C1E; }
+.rate-val { font-size: 15px; font-weight: 700; color: #007AFF; }
+
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: flex-end; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal-sheet { background: #FFFFFF; width: 100%; border-radius: 20px 20px 0 0; padding: 20px 16px 40px; border-top: 1px solid #E5E5EA; box-shadow: 0 -4px 16px rgba(0,0,0,0.05); }
+.modal-title { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 16px; color: #1C1C1E; }
+.lang-option { padding: 14px 16px; border-radius: 14px; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #F2F2F7; color: #1C1C1E; }
+.lang-option.selected { background: #E1F0FF; color: #007AFF; font-weight: 600; border: 1px solid #007AFF; }
+.lang-flag { font-size: 22px; }
+.modal-cancel { margin-top: 6px; width: 100%; padding: 14px; border: none; border-radius: 14px; background: #F2F2F7; font-size: 16px; font-weight: 600; color: #FF3B30; cursor: pointer; }
+
+.history-page { display: none; position: fixed; inset: 0; background: #FFFFFF; z-index: 200; flex-direction: column; overflow-y: auto; }
+.history-page.open { display: flex; }
+.history-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 8px; }
+.history-back { background: #F2F2F7; border: none; color: #1C1C1E; border-radius: 20px; padding: 9px 18px; display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 500; cursor: pointer; border: 1px solid #E5E5EA; }
+.history-title { font-size: 26px; font-weight: 800; padding: 6px 20px 20px; color: #1C1C1E; }
+
+.active-deals-list { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+.active-deal-card { background: #F2F2F7; border: 1px solid #E5E5EA; border-radius: 16px; padding: 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.active-deal-card:active { opacity: 0.8; }
+.active-deal-info { display: flex; flex-direction: column; gap: 4px; }
+.active-deal-id-txt { font-size: 16px; font-weight: 800; color: #1C1C1E; }
+.active-deal-amt-txt { font-size: 14px; font-weight: 600; color: #007AFF; }
+.active-deal-status-badge { padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 700; }
+.active-deal-status-badge.process { background: #E1F0FF; color: #007AFF; }
+.active-deal-status-badge.done { background: #E4F9E7; color: #34C759; }
+.no-deals-txt { text-align: center; color: #8E8E93; font-size: 15px; margin-top: 40px; }
+
+/* TAB BAR */
+.tab-bar { position: fixed; bottom: 14px; left: 14px; right: 14px; background: #FFFFFF; border: 1px solid #E5E5EA; border-radius: 22px; display: flex; justify-content: space-around; align-items: center; padding: 8px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.06); z-index: 50; transition: transform 0.3s ease, opacity 0.3s ease; }
+.tab-bar.hide { transform: translateY(100px); opacity: 0; pointer-events: none; }
+.tab { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #8E8E93; gap: 3px; cursor: pointer; padding: 5px 14px; border-radius: 14px; transition: all .2s; }
+.tab.active { color: #007AFF; background: #F2F2F7; }
+.tab img { width: 24px; height: 24px; object-fit: contain; filter: brightness(0.4); }
+.tab.active img { filter: brightness(0) cubic-bezier(1,0,0,1) invert(1) sepia(1) saturate(5) hue-rotate(200deg); }
+
+/* DEAL MODALS */
+.deal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  z-index: 100; display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+  backdrop-filter: blur(2px);
+}
+.deal-overlay.open { opacity: 1; pointer-events: auto; }
+.deal-sheet {
+  background: #FFFFFF; width: 100%; border-radius: 20px 20px 0 0;
+  padding: 24px 16px 40px; transform: translateY(100%);
+  transition: transform 0.3s ease; display: flex; flex-direction: column;
+  border-top: 1px solid #E5E5EA; box-shadow: 0 -4px 16px rgba(0,0,0,0.05);
+}
+.deal-overlay.open .deal-sheet { transform: translateY(0); }
+
+.deal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.deal-title { font-size: 22px; font-weight: 800; color: #1C1C1E; }
+.deal-close { width: 28px; height: 28px; background: #F2F2F7; border-radius: 50%; border: none; font-size: 12px; color: #8E8E93; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; }
+
+.deal-back-link {
+  color: #007AFF; font-size: 16px; font-weight: 500; text-decoration: none;
+  background: none; border: none; cursor: pointer; display: inline-flex;
+  align-items: center; gap: 6px; margin-bottom: 24px; align-self: flex-start;
+}
+
+.deal-subtitle { text-align: center; font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #1C1C1E; }
+.deal-action-btn {
+  width: 100%; padding: 16px; border-radius: 12px; border: 1px solid #E5E5EA;
+  background: #F2F2F7; font-size: 16px; font-weight: 600;
+  color: #1C1C1E; margin-bottom: 12px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity 0.2s;
+}
+.deal-action-btn:active { opacity: 0.7; }
+.deal-btn-icon { font-weight: 400; font-size: 18px; color: #007AFF; }
+
+.currency-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  max-height: 50vh; overflow-y: auto; padding-bottom: 10px;
+}
+.currency-grid::-webkit-scrollbar { display: none; }
+.currency-item {
+  background: #F2F2F7; border: 1px solid #E5E5EA; border-radius: 14px;
+  padding: 18px 10px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; cursor: pointer;
+}
+.currency-item:active { opacity: 0.7; }
+.currency-item img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; margin-bottom: 12px; }
+.currency-item span { font-size: 15px; font-weight: 700; color: #1C1C1E; }
+
+.amount-section-title { text-align: center; font-size: 17px; font-weight: 700; margin-bottom: 16px; color: #1C1C1E; }
+.amount-input-wrapper { position: relative; width: 100%; margin-bottom: 24px; }
+.amount-input {
+  width: 100%; padding: 18px 16px; font-size: 16px; font-weight: 500;
+  border: 1px solid #E5E5EA; border-radius: 14px; background: #F2F2F7; outline: none;
+  color: #1C1C1E;
+}
+.amount-input::placeholder { color: #A9A9AF; }
+.amount-input-currency {
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  font-size: 14px; font-weight: 600; color: #8E8E93; text-transform: uppercase;
+}
+
+.deal-next-btn {
+  width: auto; min-width: 150px; padding: 15px 28px; border: none; border-radius: 16px;
+  background: #007AFF; color: white; font-size: 16px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 122, 255, 0.25); text-align: center;
+  align-self: flex-start; transition: transform 0.1s;
+}
+.deal-next-btn:active { transform: scale(0.97); opacity: 0.9; }
+
+.desc-info-box {
+  background: #EBF5FF; border-radius: 14px; padding: 16px;
+  font-size: 13.5px; line-height: 1.45; color: #004085; margin-bottom: 16px;
+  border: 1px solid #CCE5FF;
+}
+.desc-info-box strong { color: #002752; font-weight: 700; display: block; margin-bottom: 3px; }
+.desc-info-box p { color: #536A80; margin-bottom: 10px; }
+.desc-code-block {
+  background: #FFFFFF; border-radius: 8px; padding: 10px 12px;
+  font-family: -apple-system, BlinkMacSystemFont, monospace;
+  font-size: 13px; color: #007AFF; margin-bottom: 12px; border: 1px solid #B8DAFF;
+}
+.desc-otherwise { color: #1C1C1E; margin-top: 10px; }
+.desc-otherwise span { background: #E5E5EA; padding: 1px 4px; border-radius: 4px; color: #007AFF; font-family: monospace; }
+
+.desc-textarea {
+  width: 100%; height: 110px; border: 1px solid #E5E5EA; border-radius: 14px;
+  padding: 14px; font-size: 15px; font-family: inherit; outline: none;
+  resize: none; color: #1C1C1E; margin-bottom: 24px; background: #F2F2F7;
+}
+.desc-textarea::placeholder { color: #A9A9AF; }
+
+.confirm-box {
+  background: #F2F2F7; border-radius: 16px; padding: 4px 16px; margin-bottom: 28px;
+  border: 1px solid #E5E5EA;
+}
+.confirm-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 0; border-bottom: 1px solid #E5E5EA; font-size: 15px;
+}
+.confirm-row:last-child { border-bottom: none; }
+.confirm-label { color: #8E8E93; }
+.confirm-value { color: #1C1C1E; font-weight: 700; text-align: right; max-width: 65%; word-break: break-word; }
+
+/* SAFETY MODAL */
+.safety-header-icon {
+  width: 44px; height: 44px; background: #FF3B30; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: white; font-weight: bold;
+  box-shadow: 0 0 16px rgba(255, 59, 48, 0.3); margin-right: 12px;
+}
+.safety-red-title {
+  color: #FF3B30; font-size: 13px; font-weight: 800; letter-spacing: 0.3px;
+  margin-bottom: 12px; text-transform: uppercase;
+}
+.safety-scroll-container {
+  max-height: 52vh; overflow-y: auto; padding-right: 4px; margin-bottom: 16px;
+}
+.safety-scroll-container::-webkit-scrollbar { display: none; }
+.safety-alert-box {
+  background: #FFECEB; border-left: 3px solid #FF3B30; border-radius: 4px 12px 12px 4px;
+  padding: 12px 14px; font-size: 14px; font-weight: 700; color: #D32F2F; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.safety-text-p { font-size: 14px; color: #3A3A3C; line-height: 1.45; margin-bottom: 16px; }
+.safety-section-title { font-size: 15px; font-weight: 800; color: #1C1C1E; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.safety-rule-row {
+  background: #F2F2F7; border-radius: 12px; padding: 12px 14px; font-size: 14px; color: #1C1C1E;
+  line-height: 1.4; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 10px;
+  border: 1px solid #E5E5EA;
+}
+.safety-rule-row strong { font-weight: 800; color: #D32F2F; }
+.safety-tg-badge {
+  background: #E1F0FF; color: #007AFF; font-weight: 700; padding: 1px 6px; border-radius: 6px; font-size: 13.5px; display: inline-block;
+}
+.safety-danger-box {
+  background: #FFECEB; border-radius: 12px; padding: 12px 16px; font-size: 14px;
+  color: #D32F2F; font-weight: 600; text-align: center; margin-bottom: 8px;
+  border: 1px solid #FFD8D6;
+}
+.safety-info-badge {
+  background: #F2F2F7; border-radius: 12px; padding: 14px; font-size: 13.5px;
+  font-weight: 700; color: #1C1C1E; text-align: center; margin-top: 14px; margin-bottom: 4px;
+  line-height: 1.4; display: flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid #E5E5EA;
+}
+.safety-timer-btn {
+  width: 100%; padding: 16px; border: none; border-radius: 16px;
+  font-size: 16px; font-weight: 700; color: white; text-align: center;
+  cursor: not-allowed; transition: background-color 0.3s ease;
+}
+.safety-timer-btn.waiting { background: #FFD1CE; color: #FF3B30; }
+.safety-timer-btn.ready {
+  background: #FF3B30; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(255, 59, 48, 0.3);
+}
+.safety-timer-btn.ready:active { transform: scale(0.99); }
+
+/* VIEW DEAL PAGE */
+.view-deal-page {
+  display: none; position: fixed; inset: 0; background: #FFFFFF; z-index: 250;
+  flex-direction: column; overflow-y: auto; padding-bottom: 30px;
+}
+.view-deal-page.open { display: flex; }
+.view-deal-header { display: flex; align-items: center; padding: 16px; background: #FFFFFF; }
+.view-deal-back {
+  background: none; border: none; color: #007AFF; font-size: 16px;
+  font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 4px;
+}
+.view-deal-id { font-size: 26px; font-weight: 800; padding: 0 16px 16px; color: #1C1C1E; }
+
+.status-timeline-card {
+  background: #FFFFFF; margin: 0 16px 12px; padding: 16px; border-radius: 20px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.05); border: 1px solid #E5E5EA;
+}
+.status-timeline-card .card-label {
+  font-size: 11px; font-weight: 700; color: #8E8E93; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+}
+.status-timeline-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #1C1C1E; }
+.status-timeline-title span { color: #34C759; }
+
+.timeline-track-wrapper { position: relative; padding: 0 8px; margin-bottom: 8px; }
+.timeline-line {
+  position: absolute; top: 10px; left: 12px; right: 12px; height: 3px;
+  background: #E5E5EA; z-index: 1; border-radius: 2px;
+}
+.timeline-line-progress {
+  position: absolute; top: 0; left: 0; width: 0%; height: 100%;
+  background: #34C759; transition: width 0.3s ease;
+}
+.timeline-nodes { display: flex; justify-content: space-between; position: relative; z-index: 2; }
+.timeline-node { width: 22px; height: 22px; border-radius: 50%; background: #AEAEB2; display: flex; align-items: center; justify-content: center; position: relative; }
+.timeline-node.active { background: #34C759; }
+.timeline-node.active.blink::after {
+  content: ''; position: absolute; inset: -4px; border-radius: 50%;
+  background: rgba(52, 199, 89, 0.4);
+  animation: nodeBlink 1.6s infinite ease-in-out;
+}
+@keyframes nodeBlink {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; }
+}
+.timeline-labels { 
+  display: flex; justify-content: space-between; margin-top: 10px; width: 100%;
+}
+.timeline-text { 
+  font-size: 9.5px; font-weight: 700; color: #8E8E93; text-align: center; 
+  flex: 1; background: #F2F2F7; padding: 4px 0; border-radius: 6px; white-space: nowrap;
+}
+.timeline-text:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.timeline-text:last-child { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.timeline-text.active { color: white; background: #34C759; }
+.timeline-footer-text { text-align: center; font-size: 12px; color: #8E8E93; margin-top: 14px; }
+
+.deal-view-amount-card {
+  background: #F2F2F7; margin: 0 16px 12px; padding: 20px 16px; border-radius: 18px;
+  display: flex; flex-direction: column; gap: 6px; border: 1px solid #E5E5EA;
+}
+.view-amount-row { display: flex; align-items: center; gap: 10px; }
+.view-amount-icon { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; margin-bottom: 12px; }
+.view-amount-val { font-size: 26px; font-weight: 800; color: #1C1C1E; }
+.view-desc-text { 
+  font-size: 14px; color: #3A3A3C; margin-top: 4px; word-break: break-all;
+  white-space: pre-wrap; line-height: 1.4;
+}
+
+.view-details-card {
+  background: #FFFFFF; margin: 0 16px 12px; border-radius: 20px; padding: 4px 16px; border: 1px solid #E5E5EA; box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+.view-details-row {
+  display: flex; justify-content: space-between; padding: 14px 0;
+  border-bottom: 1px solid #F2F2F7; font-size: 15px; gap: 12px;
+}
+.view-details-row:last-child { border-bottom: none; }
+.view-details-label { color: #8E8E93; flex-shrink: 0; }
+.view-details-val { font-weight: 700; color: #1C1C1E; text-align: right; word-break: break-word; }
+.view-details-val.blue-link { color: #007AFF; }
+.view-details-val.deal-status-static { color: #007AFF; cursor: default; }
+
+.view-current-action-card {
+  background: #F2F2F7; margin: 0 16px 20px; padding: 14px 16px; border-radius: 16px;
+  border-left: 4px solid #007AFF; display: flex; flex-direction: column; gap: 4px; border: 1px solid #E5E5EA; border-left: 4px solid #007AFF;
+}
+.view-current-title { font-size: 11px; font-weight: 800; color: #8E8E93; letter-spacing: 0.4px; text-transform: uppercase; }
+.view-current-desc { font-size: 14px; color: #1C1C1E; line-height: 1.4; font-weight: 500; }
+
+.view-share-btn-wrapper { padding: 0 16px; margin-top: auto; }
+.view-share-btn {
+  width: 100%; padding: 16px; background: #007AFF; color: white; border: none;
+  border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 4px 16px rgba(0,122,255,0.25);
+}
+.view-share-btn:active { transform: scale(0.99); opacity: 0.9; }
+
+/* ===================== WALLETS PAGE ===================== */
+#page-wallets { padding: 0; }
+
+.wallets-page-title {
+  font-size: 26px; font-weight: 800; color: #1C1C1E;
+  padding: 20px 20px 16px;
+}
+
+.wallet-currency-tabs {
+  display: flex; gap: 8px; padding: 0 16px 16px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.wallet-currency-tabs::-webkit-scrollbar { display: none; }
+
+.wallet-tab-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 20px; border: 1.5px solid #E5E5EA;
+  background: #F2F2F7; font-size: 14px; font-weight: 700; color: #1C1C1E;
+  cursor: pointer; white-space: nowrap; transition: all 0.18s;
+  flex-shrink: 0;
+}
+.wallet-tab-btn img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+.wallet-tab-btn.active {
+  background: #007AFF; color: #fff; border-color: #007AFF;
+  box-shadow: 0 3px 10px rgba(0,122,255,0.25);
+}
+
+.wallet-main-card {
+  background: #FFFFFF; border-radius: 18px; margin: 0 16px 12px;
+  border: 1px solid #E5E5EA; padding: 0;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+.wallet-card-title {
+  font-size: 17px; font-weight: 700; color: #1C1C1E;
+  padding: 18px 18px 6px;
+}
+.wallet-card-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px; border-top: 1px solid #F2F2F7;
+}
+.wallet-card-row:first-of-type { border-top: none; }
+
+.wallet-card-left { display: flex; align-items: center; gap: 12px; }
+.wallet-card-icon-wrap {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: #F2F2F7; display: flex; align-items: center; justify-content: center;
+}
+.wallet-card-icon-wrap img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.wallet-card-info {}
+.wallet-card-name { font-size: 15px; font-weight: 600; color: #1C1C1E; }
+.wallet-card-sub { font-size: 12px; color: #8E8E93; margin-top: 2px; }
+.wallet-card-edit {
+  width: 34px; height: 34px; border-radius: 50%; background: #E1F0FF;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; border: none;
+}
+.wallet-card-edit svg { width: 16px; height: 16px; stroke: #007AFF; }
+
+.wallet-action-btns { padding: 4px 16px 0; display: flex; flex-direction: column; gap: 10px; }
+
+.wallet-action-btn-fill {
+  width: 100%; padding: 16px; border: none; border-radius: 14px;
+  font-size: 16px; font-weight: 700; cursor: pointer; transition: transform 0.1s;
+}
+.wallet-action-btn-fill:active { transform: scale(0.98); }
+.wallet-action-btn-fill.primary {
+  background: #007AFF; color: white;
+  box-shadow: 0 4px 16px rgba(0,122,255,0.25);
+}
+.wallet-action-btn-fill.secondary {
+  background: #F2F2F7; color: #1C1C1E; border: 1px solid #E5E5EA;
+}
+
+/* ===================== WALLET MODALS ===================== */
+.wallet-modal-balance-box {
+  background: #EBF5FF; border-radius: 14px; padding: 14px 16px;
+  margin-bottom: 18px; border: 1px solid #CCE5FF;
+}
+.wallet-modal-balance-label {
+  font-size: 11px; font-weight: 700; color: #8E8E93;
+  text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px;
+}
+.wallet-modal-balance-row { display: flex; align-items: center; justify-content: space-between; }
+.wallet-modal-balance-val { font-size: 22px; font-weight: 800; color: #1C1C1E; }
+.wallet-modal-balance-cur { font-size: 15px; font-weight: 700; color: #007AFF; }
+
+.wallet-deposit-card-box {
+  background: #F2F2F7; border-radius: 14px; padding: 14px 16px;
+  margin-bottom: 18px; border: 1px solid #E5E5EA;
+}
+.wallet-deposit-card-label { font-size: 13px; color: #8E8E93; margin-bottom: 8px; }
+.wallet-deposit-card-num-row { display: flex; align-items: center; justify-content: space-between; }
+.wallet-deposit-card-num { font-size: 18px; font-weight: 700; color: #1C1C1E; letter-spacing: 1px; }
+.wallet-copy-btn {
+  width: 36px; height: 36px; border-radius: 50%; background: #E1F0FF;
+  border: none; display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.wallet-copy-btn svg { width: 16px; height: 16px; stroke: #007AFF; }
+
+.wallet-modal-field-label { font-size: 15px; font-weight: 700; color: #1C1C1E; margin-bottom: 8px; }
+.wallet-modal-input-wrap { position: relative; margin-bottom: 6px; }
+.wallet-modal-input {
+  width: 100%; padding: 16px 70px 16px 16px; border: 1.5px solid #007AFF;
+  border-radius: 14px; font-size: 16px; font-weight: 500; color: #1C1C1E;
+  background: #fff; outline: none;
+}
+.wallet-modal-input::placeholder { color: #A9A9AF; }
+.wallet-modal-input-cur {
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  font-size: 14px; font-weight: 700; color: #007AFF;
+}
+.wallet-modal-hint { font-size: 12px; color: #8E8E93; margin-bottom: 18px; }
+
+.wallet-modal-comment {
+  width: 100%; padding: 14px 16px; border: 1px solid #E5E5EA;
+  border-radius: 14px; font-size: 15px; font-family: inherit; color: #1C1C1E;
+  background: #F2F2F7; outline: none; resize: none; height: 70px;
+  margin-bottom: 18px;
+}
+.wallet-modal-comment::placeholder { color: #A9A9AF; }
+
+.wallet-modal-btns { display: flex; gap: 10px; margin-top: 4px; }
+.wallet-modal-cancel {
+  flex: 1; padding: 15px; border: 1px solid #E5E5EA; border-radius: 14px;
+  background: #F2F2F7; font-size: 16px; font-weight: 600; color: #1C1C1E; cursor: pointer;
+}
+.wallet-modal-confirm {
+  flex: 1.6; padding: 15px; border: none; border-radius: 14px;
+  background: #007AFF; color: white; font-size: 16px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,122,255,0.25);
+}
+.wallet-modal-confirm:active { transform: scale(0.98); }
+
+.wallet-edit-card-modal .deal-sheet { padding-bottom: 50px; }
+
+/* ===================== LEADERS PAGE ===================== */
+#page-leaders {
+  padding: 0;
+  background: #FFFFFF;
+  overflow-y: auto;
+}
+
+/* Leaders overlay page (full screen, scrollable) */
+.leaders-overlay-page {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  overflow-y: auto;
+  background: #FFFFFF;
+  padding-bottom: 100px;
+}
+.leaders-overlay-page.open { display: block; }
+
+/* Close / nav buttons top bar */
+.leaders-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px 10px;
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+.leaders-close-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(0,0,0,0.07); border: none; border-radius: 20px;
+  padding: 9px 16px; font-size: 15px; font-weight: 600;
+  color: #1C1C1E; cursor: pointer;
+}
+.leaders-nav-right {
+  display: flex; align-items: center; gap: 8px;
+}
+.leaders-nav-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(0,0,0,0.07); border: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; cursor: pointer; color: #1C1C1E;
+}
+
+/* Hero section */
+.leaders-hero {
+  background: linear-gradient(160deg, #E8F4FF 0%, #D0E8FF 40%, #C8E0FF 100%);
+  padding: 32px 20px 28px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.leaders-hero::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: rgba(0,122,255,0.08);
+}
+.leaders-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; left: -40px;
+  width: 150px; height: 150px;
+  border-radius: 50%;
+  background: rgba(0,122,255,0.06);
+}
+.leaders-trophy-icon {
+  font-size: 64px;
+  display: block;
+  margin: 0 auto 16px;
+  filter: drop-shadow(0 4px 16px rgba(0,100,200,0.25));
+  position: relative; z-index: 1;
+}
+.leaders-hero-title {
+  font-size: 28px; font-weight: 800; color: #1C1C1E;
+  margin-bottom: 8px; position: relative; z-index: 1;
+}
+.leaders-hero-sub {
+  font-size: 15px; color: #3A5A7A; margin-bottom: 18px;
+  line-height: 1.4; position: relative; z-index: 1;
+}
+.leaders-participants-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #FFFFFF; border-radius: 20px; padding: 10px 18px;
+  font-size: 15px; font-weight: 600; color: #1C1C1E;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  position: relative; z-index: 1;
+}
+.leaders-participants-badge span { font-weight: 800; color: #007AFF; }
+.leaders-participants-icon { font-size: 18px; }
+
+/* Countdown */
+.leaders-countdown-section {
+  background: linear-gradient(160deg, #E8F4FF 0%, #C8E0FF 100%);
+  padding: 20px 20px 24px;
+}
+.leaders-countdown-label {
+  font-size: 11px; font-weight: 800; color: #5A8AB0;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  text-align: center; margin-bottom: 14px;
+}
+.leaders-countdown-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  margin-bottom: 20px;
+}
+.leaders-countdown-cell {
+  background: #FFFFFF; border-radius: 14px; padding: 14px 8px;
+  text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.leaders-countdown-num {
+  font-size: 30px; font-weight: 800; color: #007AFF;
+  display: block; line-height: 1;
+}
+.leaders-countdown-unit {
+  font-size: 10px; font-weight: 700; color: #8E8E93;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  display: block; margin-top: 4px;
+}
+
+/* Prize fund */
+.leaders-prize-box {
+  background: #FFFFFF; border-radius: 16px; padding: 16px;
+  text-align: center; margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.leaders-prize-label {
+  font-size: 11px; font-weight: 700; color: #8E8E93;
+  text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+}
+.leaders-prize-val {
+  font-size: 34px; font-weight: 800; color: #007AFF;
+}
+
+/* Top 3 places */
+.leaders-top3-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  margin-bottom: 16px;
+}
+.leaders-place-card {
+  background: #FFFFFF; border-radius: 16px; padding: 16px 8px;
+  text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border: 1.5px solid transparent;
+}
+.leaders-place-card.first { border-color: rgba(0,122,255,0.3); }
+.leaders-place-badge {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #007AFF; color: white;
+  font-size: 16px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 8px;
+}
+.leaders-place-card:nth-child(2) .leaders-place-badge { background: #B0B8C1; }
+.leaders-place-card:nth-child(3) .leaders-place-badge { background: #C0825A; }
+.leaders-place-prize {
+  font-size: 20px; font-weight: 800; color: #1C1C1E;
+  display: block; margin-bottom: 2px;
+}
+.leaders-place-label { font-size: 11px; color: #8E8E93; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+
+/* Newbie bonus */
+.leaders-newbie-card {
+  background: #FFFFFF; border-radius: 18px; padding: 18px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1.5px solid #D0E8FF;
+}
+.leaders-newbie-top {
+  display: flex; align-items: flex-start; gap: 14px; margin-bottom: 12px;
+}
+.leaders-newbie-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: linear-gradient(135deg, #4FC3F7, #007AFF);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; flex-shrink: 0;
+}
+.leaders-newbie-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.leaders-newbie-amount { font-size: 24px; font-weight: 800; color: #1C1C1E; }
+.leaders-newbie-badge {
+  background: #007AFF; color: white; font-size: 10px; font-weight: 800;
+  padding: 3px 8px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.3px;
+}
+.leaders-newbie-headline {
+  font-size: 16px; font-weight: 800; color: #1C1C1E; margin-bottom: 6px;
+}
+.leaders-newbie-desc { font-size: 13.5px; color: #3A5A7A; line-height: 1.45; margin-bottom: 12px; }
+.leaders-newbie-link {
+  display: flex; align-items: center; gap: 6px;
+  background: #EBF5FF; border-radius: 10px; padding: 10px 12px;
+  font-size: 13.5px; font-weight: 700; color: #007AFF;
+}
+
+/* Prize rows (#4-10, #11-50, etc) */
+.leaders-prize-rows { padding: 0 16px; margin-bottom: 16px; }
+.leaders-prize-row {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #F2F2F7; border-radius: 14px; padding: 16px 18px;
+  margin-bottom: 8px; border: 1px solid #E5E5EA;
+}
+.leaders-prize-row.raffle {
+  background: linear-gradient(90deg, #E8F4FF, #D0E8FF);
+  border-color: #B8D8FF;
+}
+.leaders-prize-row-label { font-size: 16px; font-weight: 700; color: #1C1C1E; }
+.leaders-prize-row-right { display: flex; align-items: center; gap: 8px; }
+.leaders-prize-row-amount { font-size: 18px; font-weight: 800; color: #007AFF; }
+.leaders-raffle-badge {
+  background: #007AFF; color: white; font-size: 11px; font-weight: 800;
+  padding: 4px 10px; border-radius: 8px;
+  display: flex; align-items: center; gap: 5px;
+}
+
+/* 100 winners note */
+.leaders-winners-note {
+  text-align: center; font-size: 14px; color: #5A7A9A;
+  padding: 4px 20px 12px; font-weight: 500;
+}
+
+/* Raffle card */
+.leaders-raffle-card {
+  background: linear-gradient(135deg, #E8F4FF, #D0E8FF);
+  border-radius: 18px; padding: 18px; margin: 0 16px 16px;
+  border: 1px solid #B8D8FF;
+}
+.leaders-raffle-icon-row {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+}
+.leaders-raffle-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: #007AFF; display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.leaders-raffle-title { font-size: 17px; font-weight: 800; color: #1C1C1E; }
+.leaders-raffle-desc { font-size: 14px; color: #3A5A7A; line-height: 1.45; }
+
+/* How it works */
+.leaders-how-section { padding: 0 16px 16px; }
+.leaders-how-title {
+  font-size: 20px; font-weight: 800; color: #1C1C1E;
+  text-align: center; margin-bottom: 14px;
+}
+.leaders-how-step {
+  background: #FFFFFF; border-radius: 16px; padding: 16px;
+  margin-bottom: 10px; display: flex; align-items: flex-start; gap: 14px;
+  border: 1px solid #E5E5EA; box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+.leaders-how-num {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #007AFF; color: white;
+  font-size: 16px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.leaders-how-text {}
+.leaders-how-step-title { font-size: 15px; font-weight: 800; color: #1C1C1E; margin-bottom: 3px; }
+.leaders-how-step-desc { font-size: 13.5px; color: #5A7A9A; line-height: 1.4; }
+
+/* CTA card */
+.leaders-cta-card {
+  background: linear-gradient(135deg, #E8F4FF, #C8E0FF);
+  border-radius: 18px; padding: 18px; margin: 0 16px 16px;
+  display: flex; align-items: center; gap: 14px;
+  border: 1px solid #B8D8FF;
+}
+.leaders-cta-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: linear-gradient(135deg, #4FC3F7, #007AFF);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; flex-shrink: 0;
+}
+.leaders-cta-title { font-size: 16px; font-weight: 800; color: #1C1C1E; margin-bottom: 4px; }
+.leaders-cta-desc { font-size: 13.5px; color: #3A5A7A; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<div id="page-deals" class="page active">
+  <div class="deals-container">
+    <h1>Мои сделки</h1>
+    <button class="btn btn-blue" onclick="openDealModal()">+ Создать сделку</button>
+    <button class="btn btn-blue" onclick="openActiveDealsList()">Активные</button>
+    <button class="btn btn-white">История сделок</button>
+    <button class="btn btn-shimmer" onclick="openSearchModal()">Найти Сделку</button>
+  </div>
+</div>
+
+<div id="page-profile" class="page container">
+  <div class="theme-toggle">
+    <div class="theme-btn active">☀️</div>
+    <div class="theme-btn">🌙</div>
+  </div>
+  <div class="profile-header">
+    <div class="avatar" id="userAvatar"><span id="userAvatarInitial">?</span></div>
+    <div class="profile-name" id="userName">Загрузка...</div>
+    <div class="profile-username" id="userUsername">@...</div>
+  </div>
+  <div class="balance-card">
+    <span class="balance-label">Балансы</span>
+    <div class="balance-right">
+      <label class="switch">
+        <input type="checkbox" id="hideZero" checked>
+        <span class="slider"></span>
+      </label>
+      <span class="hide-zero-label">Скрыть нулевые</span>
+    </div>
+  </div>
+  <div class="wallets-wrap" id="walletsWrap">
+    <div class="wallet-item" data-sym="GRAM" data-balance="0.00">
+      <div class="wallet-left"><img src="https://i.postimg.cc/mD1QDycH/960px-Gram-cryptocurrency-logo-svg-round.png"> GRAM</div>
+      <div class="wallet-balance">0.00</div>
+    </div>
+    <div class="wallet-item" data-sym="USDT" data-balance="0.00">
+      <div class="wallet-left"><img src="https://i.postimg.cc/d0GhxsxN/tether-usdt-logo-round.png"> USDT</div>
+      <div class="wallet-balance">0.00</div>
+    </div>
+    <div class="wallet-item" data-sym="EUR" data-balance="0.00">
+      <div class="wallet-left"><img src="https://i.postimg.cc/Y2DC8LSz/depositphotos-379298192-stock-illustration-euro-vector-icon-money-symbolizes-round.png"> EUR</div>
+      <div class="wallet-balance">0.00</div>
+    </div>
+    <div class="wallet-item" data-sym="RSI" data-balance="0.00">
+      <div class="wallet-left"><img src="https://i.postimg.cc/D0SFR5zd/11607750-round.png"> RSI</div>
+      <div class="wallet-balance">0.00</div>
+    </div>
+    <div class="wallet-item" data-sym="RUB" data-balance="0.00">
+      <div class="wallet-left"><img src="https://i.postimg.cc/1X7Xqf8T/simvo-russkogo-rub-a-krug-yj-inejnyj-znacok-p-oskij-sti-%27-97993095-round.png"> RUB</div>
+      <div class="wallet-balance">0.00</div>
+    </div>
+    <div class="wallet-item" data-sym="ETH" data-balance="0.00">
+      <div class="wallet-left"><img src="https://i.postimg.cc/K81K2r11/Ethereum-Logo.png"> ETH</div>
+      <div class="wallet-balance">0.00</div>
+    </div>
+    <div class="wallet-item" data-sym="YHN" data-balance="0.00">
+      <div class="wallet-left"><img src="https://i.postimg.cc/T1xm2yZ4/images.jpg"> YHN</div>
+      <div class="wallet-balance">0.00</div>
+    </div>
+    <div class="wallet-item" data-sym="STARS" data-balance="0.00">
+      <div class="wallet-left"><img src="https://i.postimg.cc/4xgyhkd5/1-o-XIxgk9fx-A4Gg-Uf2XXpaf-Q-e1726091071833-round.png"> STARS</div>
+      <div class="wallet-balance">0.00</div>
+    </div>
+  </div>
+  <div class="stats-card">
+    <div class="stats-title">Статистика сделок</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-card-label">Успешных</div><div class="stat-card-val">0</div></div>
+      <div class="stat-card"><div class="stat-card-label">Активных</div><div class="stat-card-val">0</div></div>
+      <div class="stat-card"><div class="stat-card-label">Завершённых</div><div class="stat-card-val">0</div></div>
+      <div class="stat-card"><div class="stat-card-label">Отменённых</div><div class="stat-card-val">0</div></div>
+      <div class="stat-card full"><div class="stat-card-label">Всего</div><div class="stat-card-val">0</div></div>
+    </div>
+    <div class="turnover-card">
+      <div class="turnover-label">Торговый оборот</div>
+      <div class="turnover-val">0,00 $</div>
+    </div>
+  </div>
+  <div class="menu-item" onclick="openHistory()"><img src="https://i.postimg.cc/qMh4wkg4/2088617.png"> История транзакций <span class="menu-item-arrow">›</span></div>
+  <div class="menu-item" onclick="openLang()"><img src="https://i.postimg.cc/VLQ16qZ0/1246334.png"> Языки <span class="menu-item-arrow">›</span></div>
+  <div class="rates-card">
+    <div class="rates-title">Курс валют</div>
+    <div class="rate-item"><div class="rate-left"><img src="https://i.postimg.cc/mD1QDycH/960px-Gram-cryptocurrency-logo-svg-round.png"><span class="rate-pair">TON/USD</span></div><span class="rate-val">$1.63</span></div>
+    <div class="rate-item"><div class="rate-left"><img src="https://i.postimg.cc/1tfrJp3c/bitcoin-icon-sign-payment-symbol-600nw-1938997753-round.png"><span class="rate-pair">BTC/USD</span></div><span class="rate-val">$66 420</span></div>
+    <div class="rate-item"><div class="rate-left"><img src="https://i.postimg.cc/d0GhxsxN/tether-usdt-logo-round.png"><span class="rate-pair">USDT/RUB</span></div><span class="rate-val">&#8381;72.12</span></div>
+  </div>
+</div>
+
+<!-- ===================== WALLETS PAGE ===================== -->
+<div id="page-wallets" class="page">
+  <div class="wallets-page-title">Мои кошельки</div>
+  <div class="wallet-currency-tabs" id="walletCurrencyTabs"></div>
+  <div class="wallet-main-card">
+    <div class="wallet-card-title">Мои кошельки</div>
+    <div class="wallet-card-row">
+      <div class="wallet-card-left">
+        <div class="wallet-card-icon-wrap">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+            <line x1="1" y1="10" x2="23" y2="10"></line>
+          </svg>
+        </div>
+        <div class="wallet-card-info">
+          <div class="wallet-card-name" id="walletCardTypeLabel">Банковская карта для KZT</div>
+          <div class="wallet-card-sub" id="walletCardNumber">Не указана</div>
+        </div>
+      </div>
+      <button class="wallet-card-edit" onclick="openEditCardModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div class="wallet-action-btns">
+    <button class="wallet-action-btn-fill primary" onclick="openDepositModal()">Пополнить</button>
+    <button class="wallet-action-btn-fill secondary" onclick="openWithdrawModal()">Вывести</button>
+  </div>
+</div>
+
+<!-- ===================== LEADERS PAGE ===================== -->
+<div id="page-leaders" class="page">
+  <!-- Leaders content is rendered directly here (no separate overlay since it's already a tab page) -->
+
+  <!-- Top bar -->
+  <div class="leaders-top-bar">
+    <button class="leaders-close-btn" onclick="switchPage('deals', document.querySelector('.tab'))">
+      ✕ Закрыть
+    </button>
+    <div class="leaders-nav-right">
+      <button class="leaders-nav-btn">⌄</button>
+      <button class="leaders-nav-btn">⋮</button>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="leaders-hero">
+    <span class="leaders-trophy-icon">🏆</span>
+    <div class="leaders-hero-title">Топ участников</div>
+    <div class="leaders-hero-sub">Топ-20 участников по объёму сделок<br>разделят призовой фонд</div>
+    <div class="leaders-participants-badge">
+      <span class="leaders-participants-icon">👥</span>
+      Уже приняли участие <span>553 789</span> человек
+    </div>
+  </div>
+
+  <!-- Countdown + prize -->
+  <div class="leaders-countdown-section">
+    <div class="leaders-countdown-label">До старта</div>
+    <div class="leaders-countdown-grid">
+      <div class="leaders-countdown-cell">
+        <span class="leaders-countdown-num" id="cdDays">12</span>
+        <span class="leaders-countdown-unit">Дней</span>
+      </div>
+      <div class="leaders-countdown-cell">
+        <span class="leaders-countdown-num" id="cdHours">02</span>
+        <span class="leaders-countdown-unit">Часов</span>
+      </div>
+      <div class="leaders-countdown-cell">
+        <span class="leaders-countdown-num" id="cdMins">57</span>
+        <span class="leaders-countdown-unit">Минут</span>
+      </div>
+      <div class="leaders-countdown-cell">
+        <span class="leaders-countdown-num" id="cdSecs">30</span>
+        <span class="leaders-countdown-unit">Секунд</span>
+      </div>
+    </div>
+
+    <!-- Prize fund -->
+    <div class="leaders-prize-box">
+      <div class="leaders-prize-label">Призовой фонд</div>
+      <div class="leaders-prize-val">$50 000</div>
+    </div>
+
+    <!-- Top 3 -->
+    <div class="leaders-top3-grid">
+      <div class="leaders-place-card first">
+        <div class="leaders-place-badge">1</div>
+        <span class="leaders-place-prize">$10K</span>
+        <span class="leaders-place-label">1 место</span>
+      </div>
+      <div class="leaders-place-card">
+        <div class="leaders-place-badge">2</div>
+        <span class="leaders-place-prize">$5K</span>
+        <span class="leaders-place-label">2 место</span>
+      </div>
+      <div class="leaders-place-card">
+        <div class="leaders-place-badge">3</div>
+        <span class="leaders-place-prize">$3K</span>
+        <span class="leaders-place-label">3 место</span>
+      </div>
+    </div>
+
+    <!-- Newbie bonus -->
+    <div class="leaders-newbie-card">
+      <div class="leaders-newbie-top">
+        <div class="leaders-newbie-icon">✨</div>
+        <div>
+          <div class="leaders-newbie-title-row">
+            <span class="leaders-newbie-amount">$5 000</span>
+            <span class="leaders-newbie-badge">Бонус новичкам</span>
+          </div>
+          <div class="leaders-newbie-headline">Сделай первую сделку —<br>гарантированно получи долю</div>
+        </div>
+      </div>
+      <div class="leaders-newbie-desc">$5 000 разделим между всеми, кто проведёт хотя бы одну сделку до конца сезона. Одна сделка = гарантированная награда.</div>
+      <div class="leaders-newbie-link">
+        <span>✓</span> Любой может выиграть, не только топ
+      </div>
+    </div>
+  </div>
+
+  <!-- Prize rows -->
+  <div class="leaders-prize-rows" style="padding-top: 16px;">
+    <div class="leaders-prize-row">
+      <span class="leaders-prize-row-label">#4–10</span>
+      <span class="leaders-prize-row-amount">$12K</span>
+    </div>
+    <div class="leaders-prize-row">
+      <span class="leaders-prize-row-label">#11–50</span>
+      <span class="leaders-prize-row-amount">$10K</span>
+    </div>
+    <div class="leaders-prize-row raffle">
+      <span class="leaders-prize-row-label">#51–100</span>
+      <div class="leaders-prize-row-right">
+        <div class="leaders-raffle-badge">
+          <span>🎲</span> Розыгрыш
+        </div>
+        <span class="leaders-prize-row-amount">$10K</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="leaders-winners-note">100 победителей получат награды</div>
+
+  <!-- Raffle card -->
+  <div class="leaders-raffle-card">
+    <div class="leaders-raffle-icon-row">
+      <div class="leaders-raffle-icon">🎲</div>
+      <div class="leaders-raffle-title">Места 51–100 разыгрываются случайно</div>
+    </div>
+    <div class="leaders-raffle-desc">Не самый большой объём — не беда. Возможно именно вы окажетесь в списке счастливчиков!</div>
+  </div>
+
+  <!-- How it works -->
+  <div class="leaders-how-section">
+    <div class="leaders-how-title">Как это работает</div>
+    <div class="leaders-how-step">
+      <div class="leaders-how-num">1</div>
+      <div class="leaders-how-text">
+        <div class="leaders-how-step-title">Закрывайте сделки</div>
+        <div class="leaders-how-step-desc">Каждая завершённая сделка увеличивает ваш счёт в рейтинге</div>
+      </div>
+    </div>
+    <div class="leaders-how-step">
+      <div class="leaders-how-num">2</div>
+      <div class="leaders-how-text">
+        <div class="leaders-how-step-title">Поднимайтесь в топе</div>
+        <div class="leaders-how-step-desc">Чем больше суммарный объём — тем выше ваше место</div>
+      </div>
+    </div>
+    <div class="leaders-how-step">
+      <div class="leaders-how-num">3</div>
+      <div class="leaders-how-text">
+        <div class="leaders-how-step-title">Получите награду</div>
+        <div class="leaders-how-step-desc">Топ-100 победителей получают призы автоматически на баланс</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA card -->
+  <div class="leaders-cta-card">
+    <div class="leaders-cta-icon">🎁</div>
+    <div>
+      <div class="leaders-cta-title">Совершайте сделки прямо сейчас</div>
+      <div class="leaders-cta-desc">Возможно именно вы окажетесь среди победителей сезона</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="tab-bar">
+  <div class="tab active" onclick="switchPage('deals', this)"><img src="https://i.postimg.cc/L5CBXHSy/2088495.png">Сделки</div>
+  <div class="tab" onclick="switchPage('wallets', this)"><img src="https://i.postimg.cc/7L33z1D9/547171.png">Кошельки</div>
+  <div class="tab" onclick="switchPage('leaders', this)"><img src="https://i.postimg.cc/SKh8mX8R/860380.png">Лидеры</div>
+  <div class="tab" onclick="switchPage('profile', this)"><img src="https://i.postimg.cc/yNjJBLsh/10191610.png">Профиль</div>
+</div>
+
+<!-- ===================== SEARCH MODAL ===================== -->
+<div class="deal-overlay" id="searchModal" onclick="if(event.target===this)closeAllModals()">
+  <div class="deal-sheet">
+    <div class="deal-header">
+      <div class="deal-title">Поиск сделки</div>
+      <button class="deal-close" onclick="closeAllModals()">✕</button>
+    </div>
+    <div class="amount-section-title" style="text-align: left; margin-bottom: 10px;">Введите номер сделки</div>
+    <div class="amount-input-wrapper">
+      <input type="text" id="searchQueryField" class="amount-input" placeholder="Например: Y68AVB или DEAL-Y68AVB">
+    </div>
+    <button class="deal-next-btn" style="width: 100%;" onclick="executeSearch()">Найти</button>
+  </div>
+</div>
+
+<!-- LANG MODAL -->
+<div class="modal-overlay" id="langModal" onclick="if(event.target===this)closeLang()">
+  <div class="modal-sheet">
+    <div class="modal-title">Выберите язык</div>
+    <div class="lang-option selected" onclick="selectLang(this)">🇷🇺 Русский</div>
+    <div class="lang-option" onclick="selectLang(this)">🇬🇧 English</div>
+    <button class="modal-cancel" onclick="closeLang()">Отмена</button>
+  </div>
+</div>
+
+<!-- CREATE DEAL MODALS -->
+<div class="deal-overlay" id="dealModal" onclick="if(event.target===this)closeAllModals()">
+  <div class="deal-sheet">
+    <div class="deal-header">
+      <div class="deal-title">Создать сделку</div>
+      <button class="deal-close" onclick="closeAllModals()">✕</button>
+    </div>
+    <div class="deal-subtitle">Выберите тип сделки</div>
+    <button class="deal-action-btn" onclick="setDealType('Покупка')"><span class="deal-btn-icon">↓</span> Купить</button>
+    <button class="deal-action-btn" onclick="setDealType('Продажа')"><span class="deal-btn-icon">↑</span> Продать</button>
+  </div>
+</div>
+
+<div class="deal-overlay" id="currencyModal" onclick="if(event.target===this)closeAllModals()">
+  <div class="deal-sheet">
+    <div class="deal-header" style="justify-content: center; position: relative;">
+      <div class="deal-title" style="font-size: 20px;">Выберите валюту</div>
+      <button class="deal-close" onclick="closeAllModals()" style="position: absolute; right: 0;">✕</button>
+    </div>
+    <div class="currency-grid">
+      <div class="currency-item" onclick="selectCurrency('TON', 'https://i.postimg.cc/mD1QDycH/960px-Gram-cryptocurrency-logo-svg-round.png')"><img src="https://i.postimg.cc/mD1QDycH/960px-Gram-cryptocurrency-logo-svg-round.png"><span>TON</span></div>
+      <div class="currency-item" onclick="selectCurrency('USDT', 'https://i.postimg.cc/d0GhxsxN/tether-usdt-logo-round.png')"><img src="https://i.postimg.cc/d0GhxsxN/tether-usdt-logo-round.png"><span>USDT</span></div>
+      <div class="currency-item" onclick="selectCurrency('STARS', 'https://i.postimg.cc/4xgyhkd5/1-o-XIxgk9fx-A4Gg-Uf2XXpaf-Q-e1726091071833-round.png')"><img src="https://i.postimg.cc/4xgyhkd5/1-o-XIxgk9fx-A4Gg-Uf2XXpaf-Q-e1726091071833-round.png"><span>STARS</span></div>
+      <div class="currency-item" onclick="selectCurrency('RUB', 'https://i.postimg.cc/1X7Xqf8T/simvo-russkogo-rub-a-krug-yj-inejnyj-znacok-p-oskij-sti-%27-97993095-round.png')"><img src="https://i.postimg.cc/1X7Xqf8T/simvo-russkogo-rub-a-krug-yj-inejnyj-znacok-p-oskij-sti-%27-97993095-round.png"><span>RUB</span></div>
+      <div class="currency-item" onclick="selectCurrency('KGS', 'https://i.postimg.cc/s23z33X2/kyrgyzstani-som-round.png')"><img src="https://i.postimg.cc/s23z33X2/kyrgyzstani-som-round.png"><span>KGS</span></div>
+      <div class="currency-item" onclick="selectCurrency('EUR', 'https://i.postimg.cc/Y2DC8LSz/depositphotos-379298192-stock-illustration-euro-vector-icon-money-symbolizes-round.png')"><img src="https://i.postimg.cc/Y2DC8LSz/depositphotos-379298192-stock-illustration-euro-vector-icon-money-symbolizes-round.png"><span>EUR</span></div>
+      <div class="currency-item" onclick="selectCurrency('RSI', 'https://i.postimg.cc/D0SFR5zd/11607750-round.png')"><img src="https://i.postimg.cc/D0SFR5zd/11607750-round.png"><span>RSI</span></div>
+      <div class="currency-item" onclick="selectCurrency('BTC', 'https://i.postimg.cc/1tfrJp3c/bitcoin-icon-sign-payment-symbol-600nw-1938997753-round.png')"><img src="https://i.postimg.cc/1tfrJp3c/bitcoin-icon-sign-payment-symbol-600nw-1938997753-round.png"><span>BTC</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="deal-overlay" id="amountModal" onclick="if(event.target===this)closeAllModals()">
+  <div class="deal-sheet">
+    <div class="deal-header">
+      <div class="deal-title">Создать сделку</div>
+      <button class="deal-close" onclick="closeAllModals()">✕</button>
+    </div>
+    <button class="deal-back-link" onclick="backToCurrency()">‹ Назад</button>
+    <div class="amount-section-title">Введите сумму</div>
+    <div class="amount-input-wrapper">
+      <input type="number" id="amountInputField" class="amount-input" placeholder="0.00" inputmode="decimal">
+      <span class="amount-input-currency" id="selectedCurrencyLabel">TON</span>
+    </div>
+    <button class="deal-next-btn" onclick="openDescModal()">Далее</button>
+  </div>
+</div>
+
+<div class="deal-overlay" id="descModal" onclick="if(event.target===this)closeAllModals()">
+  <div class="deal-sheet">
+    <div class="deal-header">
+      <div class="deal-title">Создать сделку</div>
+      <button class="deal-close" onclick="closeAllModals()">✕</button>
+    </div>
+    <button class="deal-back-link" onclick="backToAmount()">‹ Назад</button>
+    <div class="amount-section-title">Описание товара</div>
+    <div class="desc-info-box">
+      <strong>Если это NFT-подарок:</strong>
+      <p>Профиль Telegram → подарок → ••• → «Скопировать ссылку». Несколько подарков — каждый со своей строки.</p>
+      <div class="desc-code-block">
+        <div>https://t.me/nft/PlushPepe-1</div>
+        <div>https://t.me/nft/Durovscap-1</div>
+      </div>
+      <div class="desc-otherwise">Иначе просто опишите товар, например: <span>2 Crystals and 1 Butterfly</span></div>
+    </div>
+    <textarea id="descInputField" class="desc-textarea" placeholder="Вставьте ссылки или опишите товар..."></textarea>
+    <button class="deal-next-btn" onclick="openConfirmModal()">Далее</button>
+  </div>
+</div>
+
+<div class="deal-overlay" id="confirmModal" onclick="if(event.target===this)closeAllModals()">
+  <div class="deal-sheet">
+    <div class="deal-header">
+      <div class="deal-title">Создать сделку</div>
+      <button class="deal-close" onclick="closeAllModals()">✕</button>
+    </div>
+    <button class="deal-back-link" onclick="backToDesc()">‹ Назад</button>
+    <div class="amount-section-title">Подтверждение</div>
+    <div class="confirm-box">
+      <div class="confirm-row">
+        <span class="confirm-label">Тип:</span>
+        <span class="confirm-value" id="confirmType">Покупка</span>
+      </div>
+      <div class="confirm-row">
+        <span class="confirm-label">Сумма:</span>
+        <span class="confirm-value" id="confirmAmount">0 TON</span>
+      </div>
+      <div class="confirm-row">
+        <span class="confirm-label">Описание:</span>
+        <span class="confirm-value" id="confirmDesc">—</span>
+      </div>
+    </div>
+    <button class="deal-next-btn" style="min-width: 180px;" onclick="openSafetyModal()">Создать сделку</button>
+  </div>
+</div>
+
+<div class="deal-overlay" id="safetyModal" onclick="if(event.target===this)closeAllModals()">
+  <div class="deal-sheet">
+    <div class="deal-header">
+      <div style="display: flex; align-items: center;">
+        <div class="safety-header-icon">⚠</div>
+        <div class="deal-title">Безопасность сделки</div>
+      </div>
+      <button class="deal-close" onclick="closeAllModals()">✕</button>
+    </div>
+    <div class="safety-scroll-container">
+      <div class="safety-red-title">♦ ВНИМАНИЕ! ВАЖНАЯ ИНФОРМАЦИЯ О БЕЗОПАСНОСТИ</div>
+      <div class="safety-alert-box"><span>⚠</span> Участились случаи мошенничества!</div>
+      <p class="safety-text-p">Мошенники возвращают платежи за сделки и просят передать подарок напрямую им, минуя эскроу-аккаунт.</p>
+      <div class="safety-section-title">🛡 Правила безопасности:</div>
+      <div class="safety-rule-row"><span style="color:#34C759;">✔</span><div>Передавайте подарок <strong>ТОЛЬКО</strong> на аккаунт <span class="safety-tg-badge">@Playerok_OTC</span></div></div>
+      <div class="safety-rule-row"><span style="color:#FF3B30;">✖</span><div><strong>НИКОГДА</strong> не отправляйте напрямую покупателю</div></div>
+      <div class="safety-rule-row"><span style="color:#FF9F0A;">⚠</span><div>Даже если покупатель уговаривает — <strong>НЕ ДЕЛАЙТЕ ЭТОГО!</strong></div></div>
+      <div class="safety-section-title" style="margin-top: 16px;">💵 Если вы нарушите правила:</div>
+      <div class="safety-danger-box">Останетесь без денег</div>
+      <div class="safety-danger-box">Останетесь без подарка</div>
+      <div class="safety-danger-box">Мы не сможем вам помочь</div>
+      <div class="safety-info-badge"><span>🔒</span> Помните: только <span class="safety-tg-badge">@Playerok_OTC</span> гарантирует безопасность сделки.</div>
+    </div>
+    <button id="safetyTimerBtn" class="safety-timer-btn waiting" disabled onclick="handleSafetyAccept()">Прочитайте — 10с</button>
+  </div>
+</div>
+
+<!-- ===================== WALLET MODALS ===================== -->
+
+<!-- DEPOSIT MODAL -->
+<div class="deal-overlay" id="depositModal" onclick="if(event.target===this)closeWalletModals()">
+  <div class="deal-sheet">
+    <div class="deal-header">
+      <div class="deal-title" id="depositModalTitle">Пополнить KZT</div>
+      <button class="deal-close" onclick="closeWalletModals()">✕</button>
+    </div>
+    <div class="wallet-deposit-card-box">
+      <div class="wallet-deposit-card-label">Номер карты для пополнения:</div>
+      <div class="wallet-deposit-card-num-row">
+        <div class="wallet-deposit-card-num" id="depositCardNumber">4937243010671153</div>
+        <button class="wallet-copy-btn" onclick="copyDepositCard()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="wallet-modal-field-label">Сумма <span id="depositCurLabel">KZT</span></div>
+    <div class="wallet-modal-input-wrap">
+      <input type="number" id="depositAmountInput" class="wallet-modal-input" placeholder="2000.00" inputmode="decimal">
+      <span class="wallet-modal-input-cur" id="depositCurSuffix">KZT</span>
+    </div>
+    <div class="wallet-modal-hint">Минимум: 2000 <span id="depositMinCur">KZT</span></div>
+    <div class="wallet-modal-field-label">Комментарий к переводу (необязательно)</div>
+    <textarea class="wallet-modal-comment" placeholder="Ваш комментарий"></textarea>
+    <div class="wallet-modal-btns">
+      <button class="wallet-modal-cancel" onclick="closeWalletModals()">Отменить</button>
+      <button class="wallet-modal-confirm">Я оплатил</button>
+    </div>
+  </div>
+</div>
+
+<!-- WITHDRAW MODAL -->
+<div class="deal-overlay" id="withdrawModal" onclick="if(event.target===this)closeWalletModals()">
+  <div class="deal-sheet">
+    <div class="deal-header">
+      <div class="deal-title" id="withdrawModalTitle">Вывести KZT</div>
+      <button class="deal-close" onclick="closeWalletModals()">✕</button>
+    </div>
+    <div class="wallet-modal-balance-box">
+      <div class="wallet-modal-balance-label">Доступно</div>
+      <div class="wallet-modal-balance-row">
+        <div class="wallet-modal-balance-val">0</div>
+        <div class="wallet-modal-balance-cur" id="withdrawBalanceCur">KZT</div>
+      </div>
+    </div>
+    <div class="wallet-modal-field-label">Номер карты</div>
+    <div class="wallet-modal-input-wrap" style="margin-bottom: 18px;">
+      <input type="text" id="withdrawCardInput" class="wallet-modal-input" placeholder="0000 0000 0000 0000" inputmode="numeric" maxlength="19" style="padding-right: 16px;">
+    </div>
+    <div class="wallet-modal-field-label">Сумма <span id="withdrawCurLabel">KZT</span></div>
+    <div class="wallet-modal-input-wrap">
+      <input type="number" id="withdrawAmountInput" class="wallet-modal-input" placeholder="2000.00" inputmode="decimal">
+      <span class="wallet-modal-input-cur" id="withdrawCurSuffix">KZT</span>
+    </div>
+    <div class="wallet-modal-hint" style="margin-bottom: 24px;">Минимум: 2000 <span id="withdrawMinCur">KZT</span></div>
+    <div class="wallet-modal-btns">
+      <button class="wallet-modal-cancel" onclick="closeWalletModals()">Отменить</button>
+      <button class="wallet-modal-confirm">Вывести</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT CARD MODAL -->
+<div class="deal-overlay wallet-edit-card-modal" id="editCardModal" onclick="if(event.target===this)closeWalletModals()">
+  <div class="deal-sheet">
+    <div class="deal-header">
+      <div class="deal-title">Банковская карта</div>
+      <button class="deal-close" onclick="closeWalletModals()">✕</button>
+    </div>
+    <div class="wallet-modal-field-label">Номер карты</div>
+    <div class="wallet-modal-input-wrap" style="margin-bottom: 28px;">
+      <input type="text" id="editCardInput" class="wallet-modal-input" placeholder="0000 0000 0000 0000" inputmode="numeric" maxlength="19" style="padding-right: 16px;">
+    </div>
+    <button class="wallet-modal-confirm" style="width: 100%; padding: 16px;" onclick="saveCardNumber()">Сохранить</button>
+  </div>
+</div>
+
+<!-- VIEW DEAL PAGE -->
+<div class="view-deal-page" id="viewDealPage">
+  <div class="view-deal-header">
+    <button class="view-deal-back" onclick="closeViewDealPage()">← Назад</button>
+  </div>
+  <div class="view-deal-id" id="viewDealId">#DEAL-Y68AVB</div>
+  <div class="status-timeline-card">
+    <div class="card-label">Статус сделки</div>
+    <div class="status-timeline-title">Шаг <span>1</span> из 5 — Создана</div>
+    <div class="timeline-track-wrapper">
+      <div class="timeline-line"><div class="timeline-line-progress" style="width: 0%;"></div></div>
+      <div class="timeline-nodes">
+        <div class="timeline-node active blink"></div>
+        <div class="timeline-node"></div>
+        <div class="timeline-node"></div>
+        <div class="timeline-node"></div>
+        <div class="timeline-node"></div>
+      </div>
+    </div>
+    <div class="timeline-labels">
+      <div class="timeline-text active">Создана</div>
+      <div class="timeline-text">Покупатель</div>
+      <div class="timeline-text">Оплачена</div>
+      <div class="timeline-text">В эскроу</div>
+      <div class="timeline-text">Получена</div>
+    </div>
+    <div class="timeline-footer-text">Безопасно через Telegram</div>
+  </div>
+  <div class="deal-view-amount-card">
+    <div class="view-amount-row">
+      <img src="" id="viewCurrencyIcon" class="view-amount-icon">
+      <div class="view-amount-val" id="viewAmountValue">13 EUR</div>
+    </div>
+    <div class="view-desc-text" id="viewDescText">https://t.me/nft/PlushPepe-1</div>
+  </div>
+  <div class="view-details-card">
+    <div class="view-details-row">
+      <span class="view-details-label">Статус</span>
+      <span class="view-details-val deal-status-static" id="viewDealStatusLabel">В процессе</span>
+    </div>
+    <div id="dynamicRolesContainer"></div>
+    <div class="view-details-row">
+      <span class="view-details-label">Создана</span>
+      <span class="view-details-val" id="viewCreationTime">—</span>
+    </div>
+  </div>
+  <div class="view-current-action-card">
+    <div class="view-current-title">Сейчас</div>
+    <div class="view-current-desc" id="viewCurrentActionDesc">Ожидаем вторую сторону. Поделитесь ссылкой на сделку, чтобы партнер присоединился.</div>
+  </div>
+  <div class="view-share-btn-wrapper">
+    <button class="view-share-btn" onclick="closeViewDealPage()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+      Поделиться сделкой
+    </button>
+  </div>
+</div>
+
+<!-- ACTIVE DEALS PAGE -->
+<div class="history-page" id="activeDealsPage">
+  <div class="history-header"><button class="history-back" onclick="closeActiveDealsList()">← Назад</button></div>
+  <div class="history-title">Active deals</div>
+  <div class="active-deals-list" id="activeDealsContainer"></div>
+</div>
+
+<!-- HISTORY PAGE -->
+<div class="history-page" id="historyPage">
+  <div class="history-header"><button class="history-back" onclick="closeHistory()">← Назад</button></div>
+  <div class="history-title">История транзакций</div>
+</div>
+
+<script>
+// ========== TELEGRAM USER PROFILE ==========
+function loadTelegramUser() {
+  const tg = window.Telegram && window.Telegram.WebApp;
+  const user = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+
+  const avatarEl = document.getElementById('userAvatar');
+  const initialEl = document.getElementById('userAvatarInitial');
+  const nameEl = document.getElementById('userName');
+  const usernameEl = document.getElementById('userUsername');
+
+  if (user) {
+    const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ');
+    nameEl.textContent = fullName || 'Нет имени';
+    usernameEl.textContent = user.username ? '@' + user.username : 'Нет username';
+
+    if (user.photo_url) {
+      avatarEl.innerHTML = '<img src="' + user.photo_url + '" alt="avatar">';
+    } else {
+      const initial = (user.first_name || '?')[0].toUpperCase();
+      avatarEl.innerHTML = '<span>' + initial + '</span>';
+    }
+  } else {
+    nameEl.textContent = 'Гость';
+    usernameEl.textContent = '@unknown';
+    avatarEl.innerHTML = '<span>?</span>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadTelegramUser);
+
+// ========== LOAD BALANCES FROM API ==========
+const API_BASE = 'https://467ef7ab-435f-47b8-90a1-db270a9a8dde-00-i3e9imxw07ox.sisko.replit.dev/api';
+
+async function loadBalances() {
+  try {
+    const res = await fetch(API_BASE + '/balances');
+    if (!res.ok) return;
+    const balances = await res.json();
+    document.querySelectorAll('.wallet-item[data-sym]').forEach(function(item) {
+      const sym = item.getAttribute('data-sym');
+      if (sym && balances[sym] !== undefined) {
+        const val = balances[sym];
+        item.setAttribute('data-balance', val);
+        const balEl = item.querySelector('.wallet-balance');
+        if (balEl) balEl.textContent = val;
+        if (parseFloat(val) === 0) item.classList.add('hide');
+        else item.classList.remove('hide');
+      }
+    });
+    const hideZero = document.getElementById('hideZero');
+    if (hideZero) applyToggle();
+  } catch (e) {
+    console.error('Балансы не загружены:', e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadBalances);
+
+// ========== STATE ==========
+let chosenType = "Покупка";
+let chosenCurrency = "TON";
+let chosenCurrencyIcon = "https://i.postimg.cc/mD1QDycH/960px-Gram-cryptocurrency-logo-svg-round.png";
+let safetyInterval = null;
+let savedDeals = [];
+let currentViewingDeal = null;
+
+const WALLET_CURRENCIES = [
+  { sym: 'KGS',  label: 'KGS',   icon: 'https://i.postimg.cc/s23z33X2/kyrgyzstani-som-round.png',        cardType: 'Банковская карта для KGS',  min: 500,   depositCard: '4937243010671153' },
+  { sym: 'RSI',  label: 'RSI',   icon: 'https://i.postimg.cc/D0SFR5zd/11607750-round.png',               cardType: 'Банковская карта для RSI',  min: 100,   depositCard: '4937243010671153' },
+  { sym: 'ETH',  label: 'ETH',   icon: 'https://i.postimg.cc/K81K2r11/Ethereum-Logo.png',                cardType: 'ETH кошелёк',               min: 0.001, depositCard: '0x1234...abcd' },
+  { sym: 'STARS',label: 'STARS', icon: 'https://i.postimg.cc/4xgyhkd5/1-o-XIxgk9fx-A4Gg-Uf2XXpaf-Q-e1726091071833-round.png', cardType: 'Telegram Stars', min: 50, depositCard: '4937243010671153' },
+  { sym: 'GRAM', label: 'GRAM',  icon: 'https://i.postimg.cc/mD1QDycH/960px-Gram-cryptocurrency-logo-svg-round.png', cardType: 'TON кошелёк', min: 1, depositCard: 'UQC...xyz' },
+  { sym: 'RUB',  label: 'RUB',   icon: 'https://i.postimg.cc/1X7Xqf8T/simvo-russkogo-rub-a-krug-yj-inejnyj-znacok-p-oskij-sti-%27-97993095-round.png', cardType: 'Банковская карта для RUB', min: 2000, depositCard: '4937243010671153' },
+  { sym: 'BTC',  label: 'BTC',   icon: 'https://i.postimg.cc/1tfrJp3c/bitcoin-icon-sign-payment-symbol-600nw-1938997753-round.png', cardType: 'BTC кошелёк', min: 0.0001, depositCard: '1A1zP1...' },
+];
+
+let walletCards = {};
+let activeWalletCurrency = WALLET_CURRENCIES[0];
+
+// ========== COUNTDOWN ==========
+// Target: now + 12 days 2 hours 57 minutes 30 seconds
+let countdownTarget = new Date(Date.now() + (12*86400 + 2*3600 + 57*60 + 30) * 1000);
+
+function updateCountdown() {
+  let now = Date.now();
+  let diff = Math.max(0, Math.floor((countdownTarget - now) / 1000));
+  let days = Math.floor(diff / 86400);
+  let hours = Math.floor((diff % 86400) / 3600);
+  let mins = Math.floor((diff % 3600) / 60);
+  let secs = diff % 60;
+  let d = document.getElementById('cdDays');
+  let h = document.getElementById('cdHours');
+  let m = document.getElementById('cdMins');
+  let s = document.getElementById('cdSecs');
+  if (d) d.textContent = String(days).padStart(2, '0');
+  if (h) h.textContent = String(hours).padStart(2, '0');
+  if (m) m.textContent = String(mins).padStart(2, '0');
+  if (s) s.textContent = String(secs).padStart(2, '0');
+}
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+// ========== INIT WALLETS PAGE ==========
+function initWalletTabs() {
+  let tabs = document.getElementById('walletCurrencyTabs');
+  tabs.innerHTML = '';
+  WALLET_CURRENCIES.forEach((cur, i) => {
+    let btn = document.createElement('button');
+    btn.className = 'wallet-tab-btn' + (i === 0 ? ' active' : '');
+    btn.innerHTML = `<img src="${cur.icon}" alt="${cur.sym}"> ${cur.label}`;
+    btn.onclick = () => selectWalletCurrency(cur, btn);
+    tabs.appendChild(btn);
+  });
+  updateWalletCard();
+}
+
+function selectWalletCurrency(cur, btn) {
+  activeWalletCurrency = cur;
+  document.querySelectorAll('.wallet-tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateWalletCard();
+}
+
+function updateWalletCard() {
+  let cur = activeWalletCurrency;
+  document.getElementById('walletCardTypeLabel').textContent = cur.cardType;
+  let saved = walletCards[cur.sym] || '';
+  document.getElementById('walletCardNumber').textContent = saved ? formatCardDisplay(saved) : 'Не указана';
+}
+
+function formatCardDisplay(num) {
+  let clean = num.replace(/\D/g, '');
+  return clean.replace(/(.{4})/g, '$1 ').trim();
+}
+
+// ========== WALLET ACTIONS ==========
+function openDepositModal() {
+  let cur = activeWalletCurrency;
+  document.getElementById('depositModalTitle').textContent = 'Пополнить ' + cur.sym;
+  document.getElementById('depositCurLabel').textContent = cur.sym;
+  document.getElementById('depositCurSuffix').textContent = cur.sym;
+  document.getElementById('depositMinCur').textContent = cur.sym;
+  document.getElementById('depositCardNumber').textContent = cur.depositCard;
+  document.getElementById('depositAmountInput').value = '';
+  document.getElementById('depositAmountInput').placeholder = cur.min.toString() + '.00';
+  document.getElementById('depositModal').classList.add('open');
+}
+
+function openWithdrawModal() {
+  let cur = activeWalletCurrency;
+  document.getElementById('withdrawModalTitle').textContent = 'Вывести ' + cur.sym;
+  document.getElementById('withdrawBalanceCur').textContent = cur.sym;
+  document.getElementById('withdrawCurLabel').textContent = cur.sym;
+  document.getElementById('withdrawCurSuffix').textContent = cur.sym;
+  document.getElementById('withdrawMinCur').textContent = cur.sym;
+  document.getElementById('withdrawAmountInput').value = '';
+  document.getElementById('withdrawAmountInput').placeholder = cur.min.toString() + '.00';
+  document.getElementById('withdrawCardInput').value = '';
+  document.getElementById('withdrawModal').classList.add('open');
+}
+
+function openEditCardModal() {
+  let cur = activeWalletCurrency;
+  let saved = walletCards[cur.sym] || '';
+  document.getElementById('editCardInput').value = saved;
+  document.getElementById('editCardModal').classList.add('open');
+}
+
+function saveCardNumber() {
+  let val = document.getElementById('editCardInput').value.replace(/\D/g, '');
+  walletCards[activeWalletCurrency.sym] = val;
+  updateWalletCard();
+  closeWalletModals();
+}
+
+function copyDepositCard() {
+  let num = document.getElementById('depositCardNumber').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(num.replace(/\s/g, '')).then(() => showToast('Скопировано!'));
+  }
+}
+
+function closeWalletModals() {
+  document.getElementById('depositModal').classList.remove('open');
+  document.getElementById('withdrawModal').classList.remove('open');
+  document.getElementById('editCardModal').classList.remove('open');
+}
+
+function showToast(msg) {
+  let t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:#1C1C1E;color:#fff;padding:10px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;opacity:0;transition:opacity 0.2s;';
+  document.body.appendChild(t);
+  setTimeout(() => t.style.opacity = '1', 10);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 1800);
+}
+
+document.getElementById('withdrawCardInput').addEventListener('input', function() {
+  let val = this.value.replace(/\D/g, '').substring(0, 16);
+  this.value = val.replace(/(.{4})/g, '$1 ').trim();
+});
+document.getElementById('editCardInput').addEventListener('input', function() {
+  let val = this.value.replace(/\D/g, '').substring(0, 16);
+  this.value = val.replace(/(.{4})/g, '$1 ').trim();
+});
+
+// ========== PAGE SWITCH ==========
+function switchPage(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (el) el.classList.add('active');
+  if (page === 'wallets') initWalletTabs();
+}
+
+// ========== PROFILE TOGGLE ==========
+function applyToggle() {
+  let hide = document.getElementById('hideZero').checked;
+  document.querySelectorAll('.wallet-item').forEach(item => {
+    let bal = parseFloat(item.getAttribute('data-balance'));
+    if (hide && bal === 0) item.classList.add('hide');
+    else item.classList.remove('hide');
+  });
+}
+document.getElementById('hideZero').addEventListener('change', applyToggle);
+
+// ========== LANG ==========
+function openLang() { document.getElementById('langModal').classList.add('open'); }
+function closeLang() { document.getElementById('langModal').classList.remove('open'); }
+function selectLang(el) {
+  document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ========== HISTORY ==========
+function openHistory() { document.getElementById('historyPage').classList.add('open'); }
+function closeHistory() { document.getElementById('historyPage').classList.remove('open'); }
+
+// ========== ACTIVE DEALS ==========
+function openActiveDealsList() {
+  let container = document.getElementById('activeDealsContainer');
+  container.innerHTML = '';
+  if (savedDeals.length === 0) {
+    container.innerHTML = '<div class="no-deals-txt">У вас пока нет созданных сделок</div>';
+  } else {
+    savedDeals.forEach(deal => {
+      let card = document.createElement('div');
+      card.className = "active-deal-card";
+      card.onclick = function() { closeActiveDealsList(); showDealOnViewPage(deal); };
+      let isDone = deal.status === "Завершено";
+      let badgeClass = isDone ? "done" : "process";
+      let statusText = isDone ? "Завершено" : "В процессе";
+      card.innerHTML = `
+        <div class="active-deal-info">
+          <div class="active-deal-id-txt">${deal.id}</div>
+          <div class="active-deal-amt-txt">${deal.amount}</div>
+        </div>
+        <div class="active-deal-status-badge ${badgeClass}">${statusText}</div>
+      `;
+      container.appendChild(card);
+    });
+  }
+  document.getElementById('activeDealsPage').classList.add('open');
+}
+function closeActiveDealsList() { document.getElementById('activeDealsPage').classList.remove('open'); }
+
+// ========== DEAL CREATION ==========
+function openDealModal() {
+  document.getElementById('dealModal').classList.add('open');
+  document.querySelector('.tab-bar').classList.add('hide');
+}
+function openSearchModal() {
+  document.getElementById('searchQueryField').value = '';
+  document.getElementById('searchModal').classList.add('open');
+  document.querySelector('.tab-bar').classList.add('hide');
+}
+function setDealType(type) {
+  chosenType = type;
+  document.getElementById('dealModal').classList.remove('open');
+  setTimeout(() => document.getElementById('currencyModal').classList.add('open'), 150);
+}
+function selectCurrency(symbol, iconUrl) {
+  chosenCurrency = symbol;
+  chosenCurrencyIcon = iconUrl;
+  document.getElementById('selectedCurrencyLabel').textContent = symbol;
+  document.getElementById('currencyModal').classList.remove('open');
+  setTimeout(() => document.getElementById('amountModal').classList.add('open'), 150);
+}
+function backToCurrency() {
+  document.getElementById('amountModal').classList.remove('open');
+  setTimeout(() => document.getElementById('currencyModal').classList.add('open'), 150);
+}
+function openDescModal() {
+  document.getElementById('amountModal').classList.remove('open');
+  setTimeout(() => document.getElementById('descModal').classList.add('open'), 150);
+}
+function backToAmount() {
+  document.getElementById('descModal').classList.remove('open');
+  setTimeout(() => document.getElementById('amountModal').classList.add('open'), 150);
+}
+function openConfirmModal() {
+  let amountVal = document.getElementById('amountInputField').value || "0";
+  let descVal = document.getElementById('descInputField').value || "—";
+  document.getElementById('confirmType').textContent = chosenType;
+  document.getElementById('confirmAmount').textContent = amountVal + " " + chosenCurrency;
+  document.getElementById('confirmDesc').textContent = descVal;
+  document.getElementById('descModal').classList.remove('open');
+  setTimeout(() => document.getElementById('confirmModal').classList.add('open'), 150);
+}
+function backToDesc() {
+  document.getElementById('confirmModal').classList.remove('open');
+  setTimeout(() => document.getElementById('descModal').classList.add('open'), 150);
+}
+function openSafetyModal() {
+  document.getElementById('confirmModal').classList.remove('open');
+  let timerBtn = document.getElementById('safetyTimerBtn');
+  timerBtn.disabled = true;
+  timerBtn.className = "safety-timer-btn waiting";
+  let secondsLeft = 10;
+  timerBtn.textContent = `Прочитайте — ${secondsLeft}с`;
+  clearInterval(safetyInterval);
+  setTimeout(() => {
+    document.getElementById('safetyModal').classList.add('open');
+    safetyInterval = setInterval(() => {
+      secondsLeft--;
+      if (secondsLeft > 0) {
+        timerBtn.textContent = `Прочитайте — ${secondsLeft}с`;
+      } else {
+        clearInterval(safetyInterval);
+        timerBtn.textContent = "Я ознакомился";
+        timerBtn.className = "safety-timer-btn ready";
+        timerBtn.disabled = false;
+      }
+    }, 1000);
+  }, 150);
+}
+
+function generateDealID() {
+  let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+  return '#DEAL-' + result;
+}
+function getFormattedDate() {
+  let d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}, ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+}
+
+function handleSafetyAccept() {
+  document.getElementById('safetyModal').classList.remove('open');
+  let finalAmount = document.getElementById('amountInputField').value || "0";
+  let finalDesc = document.getElementById('descInputField').value || "—";
+  let dealID = generateDealID();
+  let creationTime = getFormattedDate();
+  let newDeal = { id: dealID, type: chosenType, amount: finalAmount + " " + chosenCurrency, icon: chosenCurrencyIcon, desc: finalDesc, date: creationTime, status: "В процессе" };
+  savedDeals.push(newDeal);
+  showDealOnViewPage(newDeal);
+}
+
+// ========== VIEW DEAL ==========
+function showDealOnViewPage(dealObj) {
+  currentViewingDeal = dealObj;
+  document.getElementById('viewDealId').textContent = dealObj.id;
+  document.getElementById('viewCurrencyIcon').src = dealObj.icon;
+  document.getElementById('viewAmountValue').textContent = dealObj.amount;
+  document.getElementById('viewDescText').textContent = dealObj.desc;
+  document.getElementById('viewCreationTime').textContent = dealObj.date;
+  let statusLabel = document.getElementById('viewDealStatusLabel');
+  statusLabel.textContent = dealObj.status;
+  let rolesContainer = document.getElementById('dynamicRolesContainer');
+  if (dealObj.type === "Покупка") {
+    rolesContainer.innerHTML = `
+      <div class="view-details-row"><span class="view-details-label">Продавец</span><span class="view-details-val">Продавец не присоединился</span></div>
+      <div class="view-details-row"><span class="view-details-label">Покупатель</span><span class="view-details-val blue-link">@Tulenchik27 (Вы)</span></div>`;
+  } else {
+    rolesContainer.innerHTML = `
+      <div class="view-details-row"><span class="view-details-label">Продавец</span><span class="view-details-val blue-link">@Tulenchik27 (Вы)</span></div>
+      <div class="view-details-row"><span class="view-details-label">Покупатель</span><span class="view-details-val">Покупатель не присоединился</span></div>`;
+  }
+  if (dealObj.status === "Завершено") {
+    statusLabel.style.color = "#34C759";
+    document.getElementById('viewCurrentActionDesc').textContent = "Сделка успешно завершена. Все обязательства выполнены.";
+  } else {
+    statusLabel.style.color = "#007AFF";
+    document.getElementById('viewCurrentActionDesc').textContent = "Ожидаем вторую сторону. Поделитесь ссылкой на сделку, чтобы партнер присоединился.";
+  }
+  setTimeout(() => document.getElementById('viewDealPage').classList.add('open'), 150);
+}
+
+function executeSearch() {
+  let query = document.getElementById('searchQueryField').value;
+  if (!query) return;
+  let cleanedQuery = query.trim().toUpperCase().replace('#', '');
+  if (!cleanedQuery.startsWith('DEAL-')) cleanedQuery = 'DEAL-' + cleanedQuery;
+  cleanedQuery = '#' + cleanedQuery;
+  let foundDeal = savedDeals.find(d => d.id === cleanedQuery);
+  if (foundDeal) {
+    document.getElementById('searchModal').classList.remove('open');
+    showDealOnViewPage(foundDeal);
+  } else {
+    alert("Сделка с ID " + query + " не найдена.");
+  }
+}
+
+function closeViewDealPage() {
+  document.getElementById('viewDealPage').classList.remove('open');
+  currentViewingDeal = null;
+  closeAllModals();
+}
+
+function closeAllModals() {
+  clearInterval(safetyInterval);
+  ['dealModal','currencyModal','amountModal','descModal','confirmModal','safetyModal','searchModal'].forEach(id => {
+    document.getElementById(id).classList.remove('open');
+  });
+  document.querySelector('.tab-bar').classList.remove('hide');
+}
+</script>
+</body>
+</html>
